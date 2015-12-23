@@ -23,7 +23,7 @@ const char* scenefile = "C:\\Users\\XDEX-pc\\Desktop\\0216032V1\\Scene3.scene";
 mesh *objects[1000];
 char buf[5010];
 
-int objSum = 0 , windowSize[2] , oldX, oldY, selected = 0 , mouseDown;
+int objSum = 0 , windowSize[2] , oldX, oldY, selected = 0 , mouseDown , angle = 0;
 double NewX[1001] = { 0 }, NewY[1000] = { 0 } , deltX[1000] = { 0 }, deltY[1000] = { 0 };
 double R[3];
 bool mohu = false;
@@ -281,43 +281,12 @@ void zoom(int val) {
 }
 
 void rotate(int val) {
-	val *= -1;
-	float tmp[4], length = 0, up[4] , len = 0, nlen = 0;
-	float cross[4] = { 0 };
-	for (int i = 0; i < 3; i++) {
-		tmp[i] = view.eye[i] - view.vat[i];
-		len += tmp[i] * tmp[i];
-	}
-
-	tmp[3] = tmp[0];
-	for (int i = 0; i < 3; i++)
-		up[i] = view.vup[i];
-	up[3] = up[0];
-
-	for (int i = 0; i < 3; i++)
-		cross[(i + 2) % 3] = tmp[i] * up[i + 1] - tmp[i + 1] * up[i];
-
-
-	for (int i = 0; i < 3; i++)
-		length += cross[i] * cross[i];
-	length = sqrt(length);
-
-	for (int i = 0; i < 3; i++) {
-		tmp[i] += cross[i] / length * val;
-		nlen += tmp[i] * tmp[i] ;
-	}
-
-	nlen = sqrt(nlen);
-	len = sqrt(len);
-	float newlen = len / nlen;
-
-	for (int i = 0; i < 3; i++)
-		view.eye[i] = view.vat[i] + tmp[i] * newlen;
-
+	angle += val;
 }
 
 void keyboard(unsigned char key, int x, int y)
 {
+	cout << " key : " << key << endl;
 	if (key <= '9' && '1' <= key) {
 		int i = key - '1';
 		Refresh(selected);
@@ -486,18 +455,18 @@ void drawpoly(float* pos)
 				glMaterialfv(GL_FRONT, GL_SHININESS, &obj->mList[lastMaterial].Ns);
 			}
 			float vtemp[2][3];
-			for (int xx = 0;xx < 2;xx++)
-				for (int yy = 0;yy < 3;yy++)
+			for (int X = 0;X < 2;X++)
+				for (int Y = 0;Y < 3;Y++)
 				{
-					vtemp[xx][yy] = obj->vList[obj->faceList[i][0].v].ptr[yy] - obj->vList[obj->faceList[i][xx + 1].v].ptr[yy];
+					vtemp[X][Y] = obj->vList[obj->faceList[i][0].v].ptr[Y] - obj->vList[obj->faceList[i][X + 1].v].ptr[Y];
 				}//邊的向量
 
 			Vector3D vt0( vtemp[0]) , vt1( vtemp[1] );
 			Vector3D vv0 = vt0.Cross(vt1);
 			Vector3D vv1;
 
-			for (int yy = 0;yy < 3;yy++)
-				vv1[yy] = obj->vList[obj->faceList[i][0].v].ptr[yy] - pos[yy];//點到光源
+			for (int Y = 0;Y < 3;Y++)
+				vv1[Y] = obj->vList[obj->faceList[i][0].v].ptr[Y] - pos[Y];//點到光源
 			
 			if ( vv0.Dot(vv1) < 0)//內積
 			{
@@ -583,22 +552,22 @@ void display(){
 	gluLookAt(view.eye[0], view.eye[1], view.eye[2],// eye
 		view.vat[0], view.vat[1], view.vat[2],     // center
 		view.vup[0], view.vup[1], view.vup[2]);    // up
-
-
+	glRotatef(angle, view.vup[0], view.vup[1], view.vup[2]);
+	cout << angle << " " << view.vup[0] << " " << view.vup[1] << " " << view.vup[2] << endl;
 	if ( mohu ) {
 
 		glClear(GL_ACCUM_BUFFER_BIT);
-		for (int xx = -5;xx < 5;xx++)
+		for (int X = -5;X < 5;X++)
 		{
-			for (int yy = -5;yy < 5;yy++)
+			for (int Y = -5;Y < 5;Y++)
 			{
 				glClear(GL_COLOR_BUFFER_BIT);
 				glMatrixMode(GL_MODELVIEW);
 				glLoadIdentity();
-				gluLookAt(view.eye[0] + 0.1*xx, view.eye[1] + 0.1*yy, view.eye[2],
+				gluLookAt(view.eye[0] + 0.1*X, view.eye[1] + 0.1*Y, view.eye[2],
 					view.vat[0], view.vat[1], view.vat[2],
 					view.vup[0], view.vup[1], view.vup[2]);
-
+				glRotatef(angle, view.vup[0], view.vup[1], view.vup[2]);
 				glEnable(GL_STENCIL_TEST);
 				glClearStencil(0);
 				//pass1

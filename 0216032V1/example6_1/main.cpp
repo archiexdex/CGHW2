@@ -15,10 +15,10 @@ unsigned int texObject[NUM_TEXTURE];
 using namespace std;
 using namespace MathTool;
 
-const string localPath = "\\";
-const char* viewfile  = "Scene3.view";
-const char* lightfile = "Scene3.light";
-const char* scenefile = "Scene3.scene";
+const string localPath = "C:\\Users\\XDEX-pc\\Desktop\\0216032V1\\";
+const char* viewfile  = "C:\\Users\\XDEX-pc\\Desktop\\0216032V1\\Scene3.view";
+const char* lightfile = "C:\\Users\\XDEX-pc\\Desktop\\0216032V1\\Scene3.light";
+const char* scenefile = "C:\\Users\\XDEX-pc\\Desktop\\0216032V1\\Scene3.scene";
 
 mesh *objects[1000];
 char buf[5010];
@@ -26,7 +26,7 @@ char buf[5010];
 int objSum = 0 , windowSize[2] , oldX, oldY, selected = 0 , mouseDown;
 double NewX[1001] = { 0 }, NewY[1000] = { 0 } , deltX[1000] = { 0 }, deltY[1000] = { 0 };
 double R[3];
-bool cantsee = false;
+bool mohu = false;
 
 char* files[10000];
 
@@ -57,8 +57,8 @@ vector< Light > lights;
 vector< Ambient > ambients;
 vector< Scene > scenes;
 
-struct Viewread {
-	Viewread(const char* path, View &view) {
+struct ReadView {
+	ReadView(const char* path, View &view) {
 		ifstream fin(path);
 		string OP;
 		while (fin >> OP) {
@@ -93,8 +93,8 @@ struct Viewread {
 		fin.close();
 	}
 };
-struct LightRead {
-	LightRead(const char* path, vector<Light> &lightVec, vector<Ambient> &ambientVec) {
+struct ReadLight {
+	ReadLight(const char* path, vector<Light> &lightVec, vector<Ambient> &ambientVec) {
 		ifstream fin(path);
 		string OP;
 		
@@ -125,8 +125,8 @@ struct LightRead {
 
 	}
 };
-struct SceneRead {
-	SceneRead(const char* path, vector<Scene> &sceneVec) {
+struct ReadScene {
+	ReadScene(const char* path, vector<Scene> &sceneVec) {
 		ifstream fin(path);	
 		Scene s;
 		string OP , tmp2;
@@ -260,7 +260,12 @@ void LoadTexture( Scene &scene  , int id){
 	}
 }
 
-
+void Refresh(int sel) {
+	deltX[sel] += NewX[sel];
+	NewX[sel] = 0;
+	deltY[sel] += NewY[sel];
+	NewY[sel] = 0;
+}
 void drawF();
 void zoom(int val) {
 	val *= -1;
@@ -315,11 +320,7 @@ void keyboard(unsigned char key, int x, int y)
 {
 	if (key <= '9' && '1' <= key) {
 		int i = key - '1';
-		int sel = selected;
-		deltX[sel] += NewX[sel];
-		NewX[sel] = 0;
-		deltY[sel] += NewY[sel];
-		NewY[sel] = 0;	
+		Refresh(selected);
 		if (i < objSum) {
 			selected = i;
 		}
@@ -327,7 +328,7 @@ void keyboard(unsigned char key, int x, int y)
 	
 	switch (key){
 	case 'r':
-		cantsee = !cantsee;
+		mohu = !mohu;
 		break;
 	case 'w':
 		zoom(1);
@@ -360,11 +361,7 @@ void mouseClicks(int button, int state, int x, int y) {
 		}
 		else {
 			mouseDown = 0;
-			int sel = selected;
-			deltX[sel] += NewX[sel];
-			NewX[sel] = 0;
-			deltY[sel] += NewY[sel];
-			NewY[sel] = 0;
+			Refresh(selected);
 		}
 		glutPostRedisplay();
 		break;
@@ -382,9 +379,9 @@ void mouseMove(int x, int y) {
 
 int main(int argc, char** argv){
 
-	Viewread viewReader(viewfile, view);
-	LightRead lightReader(lightfile, lights, ambients);
-	SceneRead sceneReader(scenefile, scenes);
+	ReadView viewReader(viewfile, view);
+	ReadLight lightReader(lightfile, lights, ambients);
+	ReadScene sceneReader(scenefile, scenes);
 
 	Vector3D aaa;
 
@@ -463,7 +460,7 @@ void light(){
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambients[0].data);
 }
 
-void drawpolygons(float* pos)
+void drawpoly(float* pos)
 {
 	
 	mesh *obj;
@@ -493,16 +490,16 @@ void drawpolygons(float* pos)
 				for (int yy = 0;yy < 3;yy++)
 				{
 					vtemp[xx][yy] = obj->vList[obj->faceList[i][0].v].ptr[yy] - obj->vList[obj->faceList[i][xx + 1].v].ptr[yy];
-				}//√‰™∫¶V∂q
+				}//ÈÇäÁöÑÂêëÈáè
 
 			Vector3D vt0( vtemp[0]) , vt1( vtemp[1] );
 			Vector3D vv0 = vt0.Cross(vt1);
 			Vector3D vv1;
 
 			for (int yy = 0;yy < 3;yy++)
-				vv1[yy] = obj->vList[obj->faceList[i][0].v].ptr[yy] - pos[yy];//¬I®Ï•˙∑Ω
+				vv1[yy] = obj->vList[obj->faceList[i][0].v].ptr[yy] - pos[yy];//ÈªûÂà∞ÂÖâÊ∫ê
 			
-			if ( vv0.Dot(vv1) < 0)//§∫øn
+			if ( vv0.Dot(vv1) < 0)//ÂÖßÁ©ç
 			{
 				glBegin(GL_POLYGON);
 				glNormal3fv(obj->nList[obj->faceList[i][1].n].ptr);
@@ -559,14 +556,18 @@ void drawpolygons(float* pos)
 void display(){
 
 	// clear the buffer
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);      //≤M∞£•Œcolor
-	glClearDepth(1.0f);                        // Depth Buffer (¥N¨Oz buffer) Setup
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);      //Ê∏ÖÈô§Áî®color
+	glClearDepth(1.0f);                        // Depth Buffer (Â∞±ÊòØz buffer) Setup
 	glEnable(GL_DEPTH_TEST);                   // Enables Depth Testing
 	glDepthFunc(GL_LEQUAL);                    // The Type Of Depth Test To Do
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GREATER, 0.5f);
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);//≥o¶Êß‚µe≠±≤M¶®∂¬¶‚®√•B≤M∞£z buffer
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);//ÈÄôË°åÊääÁï´Èù¢Ê∏ÖÊàêÈªëËâ≤‰∏¶‰∏îÊ∏ÖÈô§z buffer
+
+													   // viewport transformation
+													   //	glViewport(0, 0, windowSize[0], windowSize[1]);
+
 
 
 	glViewport(view.viewport[0], view.viewport[1], view.viewport[2], view.viewport[3]);
@@ -584,45 +585,7 @@ void display(){
 		view.vup[0], view.vup[1], view.vup[2]);    // up
 
 
-	if ( !cantsee ) {
-
-		glEnable(GL_STENCIL_TEST);
-		glClear(GL_COLOR_BUFFER_BIT);
-		glClearStencil(0);
-
-		//pass1
-		glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		ambientl();
-		drawF();
-		//pass2
-		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);// color buffer
-		glDepthMask(GL_FALSE);//depth buffer
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_BACK);//enabl back face
-		glStencilFunc(GL_ALWAYS, 0, 0xff);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
-		float* lightpos = lights[0].pos;
-		drawpolygons(lightpos);
-		glDisable(GL_CULL_FACE);
-		//pass3
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_FRONT);
-		glStencilFunc(GL_ALWAYS, 0, 0xff);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_DECR);
-		drawpolygons(lightpos);
-		glDisable(GL_CULL_FACE);
-		//pass4
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		glDepthMask(GL_TRUE);
-		glStencilFunc(GL_EQUAL, 0, 0xff);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-		light();
-		drawF();
-		
-
-	}
-	else {
-
+	if ( mohu ) {
 
 		glClear(GL_ACCUM_BUFFER_BIT);
 		for (int xx = -5;xx < 5;xx++)
@@ -651,14 +614,14 @@ void display(){
 				glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
 
 				float* lightpos = lights[0].pos;
-				drawpolygons(lightpos);
+				drawpoly(lightpos);
 				glDisable(GL_CULL_FACE);
 				//pass3
 				glEnable(GL_CULL_FACE);
 				glCullFace(GL_FRONT);
 				glStencilFunc(GL_ALWAYS, 0, 0xff);
 				glStencilOp(GL_KEEP, GL_KEEP, GL_DECR);
-				drawpolygons(lightpos);
+				drawpoly(lightpos);
 				glDisable(GL_CULL_FACE);
 				//pass4
 				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -672,6 +635,43 @@ void display(){
 			}
 		}
 		glAccum(GL_RETURN, 1.0);
+
+	}
+	else {
+		glEnable(GL_STENCIL_TEST);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glClearStencil(0);
+
+		//pass1
+		glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		ambientl();
+		drawF();
+		//pass2
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);// color buffer
+		glDepthMask(GL_FALSE);//depth buffer
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);//enabl back face
+		glStencilFunc(GL_ALWAYS, 0, 0xff);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
+		float* lightpos = lights[0].pos;
+		drawpoly(lightpos);
+		glDisable(GL_CULL_FACE);
+		//pass3
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_FRONT);
+		glStencilFunc(GL_ALWAYS, 0, 0xff);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_DECR);
+		drawpoly(lightpos);
+		glDisable(GL_CULL_FACE);
+		//pass4
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glDepthMask(GL_TRUE);
+		glStencilFunc(GL_EQUAL, 0, 0xff);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+		light();
+		drawF();
+
+
 	}
 
 
@@ -687,7 +687,7 @@ void drawF() {
 
 		bool en = false;
 		mesh* object = objects[k];
-		glPushMatrix();//¿x¶s≤{¶b™∫Øx∞} (•ÿ´e¨Omodelview)
+		glPushMatrix();//ÂÑ≤Â≠òÁèæÂú®ÁöÑÁü©Èô£ (ÁõÆÂâçÊòØmodelview)
 		int ptr = k;
 
 		Scene scene = scenes[ptr];
